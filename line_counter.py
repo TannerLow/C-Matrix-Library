@@ -3,7 +3,7 @@
 import os
 from datetime import date
 
-excludes = ['.git', '.vscode']
+excludes = ['.git', '.vscode', 'OpenCL']
 interests = ['c', 'h']
 language = 'C'
 
@@ -48,10 +48,11 @@ with open("README.md", 'r', encoding="utf-8") as file:
     readme_text = file.read()
 
 identifier = "## Total lines of " + language + " source code and headers as of "
-readme_text_tokens = readme_text.split(identifier)
-if len(readme_text_tokens) < 2:
-    readme_text_tokens[0] += '\n' + identifier
-    readme_text_tokens.append("lines")
+if identifier in readme_text:
+    readme_text_tokens = readme_text.split(identifier)
+else:
+    readme_text += '\n' + identifier + "lines"
+    readme_text_tokens = readme_text.split(identifier)
 dynamic_text = str(date.today()) + " = " + str(total) + " lines"
 remainder = readme_text_tokens[1].split("lines", 1)[1]
 readme_text = readme_text_tokens[0] + identifier + dynamic_text + remainder

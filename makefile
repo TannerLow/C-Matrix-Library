@@ -1,10 +1,15 @@
-python_cmd := python # can be python3 in some cases
+python_cmd := python# can be python3 in some cases
 output_file := 
 delete := 
-override CFLAGS := -Wall $(CFLAGS)
+
+include_dir_option := -I "./OpenCL"
+lib_option := -L "./OpenCL"
+libraries := -l "OpenCL"
+override CFLAGS := -Wall -Wextra $(CFLAGS)
+appended_options := $(include_dir_option) $(lib_option) $(libraries)
 
 test_base_cmd = $(MAKE) -s CFLAGS="$(test_adds)"
-base_cmd = gcc $(wildcard *.c) $(CFLAGS) -o $(output_file)
+base_cmd = gcc $(CFLAGS) $(wildcard *.c) -o $(output_file) $(appended_options)
 debug_cmd  = $(base_cmd) -DDEBUG
 release_cmd = $(base_cmd) -DNDEBUG
 
