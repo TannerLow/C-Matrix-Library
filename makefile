@@ -8,8 +8,12 @@ libraries := -l "OpenCL"
 override CFLAGS := -Wall -Wextra $(CFLAGS)
 appended_options := $(include_dir_option) $(lib_option) $(libraries)
 
+example_c_files := $(wildcard example/*.c)
+base_dir_c_files := $(wildcard *.c)
+c_files := $(base_dir_c_files) $(example_c_files)
+
 test_base_cmd = $(MAKE) -s CFLAGS="$(test_adds)"
-base_cmd = gcc $(CFLAGS) $(wildcard *.c) -o $(output_file) $(appended_options)
+base_cmd = gcc $(CFLAGS) $(c_files) -o $(output_file) $(appended_options)
 debug_cmd  = $(base_cmd) -DDEBUG
 release_cmd = $(base_cmd) -DNDEBUG
 
