@@ -1,3 +1,6 @@
 backup
 *.exe
 *.cfg
+build
+.vscode
+makefile_

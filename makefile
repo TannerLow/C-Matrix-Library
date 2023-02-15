@@ -1,47 +1,107 @@
-python_cmd := python# can be python3 in some cases
-output_file := 
-delete := 
+# GNU Make docs : https://www.gnu.org/software/make/manual/make.html
+# Quick tutorial: https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 
-include_dir_option := -I "./OpenCL"
-lib_option := -L "./OpenCL"
-libraries := -l "OpenCL"
-override CFLAGS := -Wall -Wextra $(CFLAGS)
-appended_options := $(include_dir_option) $(lib_option) $(libraries)
+CC        := gcc
+LD        := gcc
+AR        := ar
+override CFLAGS := $(sort -Wall -Wextra $(CFLAGS))
 
-example_c_files := $(wildcard example/*.c)
-base_dir_c_files := $(wildcard *.c)
-c_files := $(base_dir_c_files) $(example_c_files)
+MODULES        := . device matrix
+TEST_MODULES   := .
+SRC_DIR        := $(addprefix src/,$(MODULES))
+TEST_SRC_DIR   := $(addprefix test/,$(TEST_MODULES))
+BUILD_DIR      := $(addprefix build/,$(SRC_DIR))
+TEST_BUILD_DIR := $(addprefix build/,$(TEST_SRC_DIR))
 
-test_base_cmd = $(MAKE) -s CFLAGS="$(test_adds)"
-base_cmd = gcc $(CFLAGS) $(c_files) -o $(output_file) $(appended_options)
-debug_cmd  = $(base_cmd) -DDEBUG
-release_cmd = $(base_cmd) -DNDEBUG
+SRC           := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
+TEST_SRC      := $(foreach sdir,$(TEST_SRC_DIR),$(wildcard $(sdir)/*.c))
+SRC_OBJ       := $(patsubst src/%.c,build/src/%.o,$(SRC))
+TEST_OBJ      := $(patsubst test/%.c,build/test/%.o,$(TEST_SRC))
+INCLUDES      := -I "./OpenCL/Nvidia" -I "./include"
+TEST_INCLUDES := -I "./test"
+
+LIBDIR := -L "./OpenCL"
+LIBS := -l "x86_64/OpenCL_nvidia"
 
 
+# Platform specific variables
+DELETE      := 
+RMDIR       := 
+EXE         := 
+HIDE_OUTPUT := 
+PS          := 
 ifeq ($(OS), Windows_NT)
-	delete := del /f
-	output_file := main.exe
+	DELETE      := del /f
+	RMDIR       := rmdir /s /q
+	EXE         := main.exe
+	HIDE_OUTPUT := 2> nul
+	PS          :=\\
+
 else
-	delete := rm -f
-	output_file := main.out
+	DELETE      := rm -f
+	RMDIR       := rm -rf
+	EXE         := main.out
+	HIDE_OUTPUT := > /dev/null
+	PS          :=/
 endif
 
 
-debug:
-	$(python_cmd) line_counter.py
-	@echo $(debug_cmd)
-	@$(debug_cmd)
+.PHONY: release checkdirs clean
+
+SHARED_DEPS = checkdirs lib/CMatrixLib.lib build/main.exe
+
+all: checkdirs lib/CMatrixLib.lib build/main.exe
 
 release:
-	$(python_cmd) line_counter.py
-	@echo $(release_cmd)
-	@$(release_cmd)
+	$(MAKE) all CFLAGS="-DNDEBUG $(CFLAGS)"
 
-test_debug: 
-	@$(test_base_cmd) debug
+debug:
+	$(MAKE) all CFLAGS="-DDEBUG $(CFLAGS)"
 
-test_release: 
-	@$(test_base_cmd) release
+build/main.exe: $(TEST_OBJ)
+	$(CC) $(CFLAGS) $^ -o $@ $(TEST_INCLUDES) $(INCLUDES) $(LIBDIR) -L "./lib" -l "CMatrixLib" $(LIBS)
+
+lib/CMatrixLib.lib: $(SRC_OBJ)
+	$(AR) rcs $@ $(foreach obj,$^, -o $(obj)) 
+
+checkdirs: $(BUILD_DIR) $(TEST_BUILD_DIR)
+
+$(BUILD_DIR):
+ifeq ($(OS), Windows_NT)
+	@IF not exist "$@" (mkdir "$@")
+	@IF not exist lib (mkdir lib)
+else
+	@mkdir -p $@
+	@mkdir -p lib
+endif
+
+$(TEST_BUILD_DIR):
+ifeq ($(OS), Windows_NT)
+	@IF not exist "$@" (mkdir "$@")
+	@IF not exist lib (mkdir lib)
+else
+	@mkdir -p $@
+	@mkdir -p lib
+endif
 
 clean:
-	$(delete) main.exe
+	$(RMDIR) build
+	$(RMDIR) lib
+
+vpath %.c $(TEST_SRC_DIR)
+
+define make-test-obj
+$1/%.o: %.c
+	$(CC) $(CFLAGS) -c $$< -o $$@ $(TEST_INCLUDES) $(INCLUDES) $(LIBDIR) -L "./lib" -l "CMatrixLib" $(LIBS)
+endef
+
+vpath %.c $(SRC_DIR)
+
+define make-obj
+$1/%.o: %.c
+	$(CC) $(CFLAGS) -c $$< -o $$@ $(INCLUDES) $(LIBDIR) $(LIBS)
+endef
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-obj,$(bdir))))
+
+$(foreach bdir,$(TEST_BUILD_DIR),$(eval $(call make-test-obj,$(bdir))))

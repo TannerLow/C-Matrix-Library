@@ -32,8 +32,8 @@ int cml_example_runVectorAdd() {
         abort();
     }
     source_str = (char*)malloc(MAX_KERNEL_SOURCE_SIZE);
-    source_size = fread( source_str, 1, MAX_KERNEL_SOURCE_SIZE, fp);
-    fclose( fp );
+    source_size = fread(source_str, 1, MAX_KERNEL_SOURCE_SIZE, fp);
+    fclose(fp);
 
     // Get platform and device information
     cl_platform_id platform_id = NULL;

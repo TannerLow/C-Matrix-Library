@@ -4,7 +4,7 @@ import os
 from datetime import date
 
 excludes = ['.git', '.vscode', 'OpenCL']
-interests = ['c', 'h']
+interests = ['c', 'h', 'cl']
 language = 'C'
 
 def get_interested_files(path):
