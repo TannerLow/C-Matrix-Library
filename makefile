@@ -1,6 +1,7 @@
 # GNU Make docs : https://www.gnu.org/software/make/manual/make.html
 # Quick tutorial: https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 
+PYTHON    := python
 CC        := gcc
 LD        := gcc
 AR        := ar
@@ -51,6 +52,7 @@ endif
 SHARED_DEPS = checkdirs lib/CMatrixLib.lib build/main.exe
 
 all: checkdirs lib/CMatrixLib.lib build/main.exe
+	$(PYTHON) ./line_counter.py
 
 release:
 	$(MAKE) all CFLAGS="-DNDEBUG $(CFLAGS)"
