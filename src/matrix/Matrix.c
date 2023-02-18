@@ -3,15 +3,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
-Matrix cml_createMatrix(const size_t rows, const size_t cols) {
-    Matrix matrix;
-    matrix.data = (double*)malloc(sizeof(double) * rows * cols);
+cml_Matrix cml_createMatrix(const size_t rows, const size_t cols) {
+    cml_Matrix matrix;
+    matrix.data = (float*)malloc(sizeof(float) * rows * cols);
     matrix.rows = rows;
     matrix.cols = cols;
     return matrix;
 }
 
-void cml_deleteMatrix(Matrix matrix) {
+void cml_deleteMatrix(cml_Matrix matrix) {
     assert(matrix.data != NULL);
     free(matrix.data);
     matrix.data = NULL;

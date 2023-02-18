@@ -5,8 +5,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
-DeviceArray getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices) {
+DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices) {
     DeviceArray gpus;
     gpus.deviceIds = NULL;
     gpus.count = 0;
@@ -94,4 +95,13 @@ DeviceArray getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t max
     free(deviceIds);
 
     return gpus;
+}
+
+void cml_deleteDeviceArray(DeviceArray* deviceArray) {
+    assert(deviceArray != NULL);
+    assert(deviceArray->deviceIds != NULL);
+
+    free(deviceArray->deviceIds);
+    deviceArray->deviceIds = NULL;
+    deviceArray->count = 0;
 }

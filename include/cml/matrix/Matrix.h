@@ -4,12 +4,12 @@
 #include <stddef.h>
 
 typedef struct {
-    double* data;
+    float* data;
     size_t rows;
     size_t cols;
-} Matrix;
+} cml_Matrix;
 
-Matrix cml_createMatrix(const size_t rows, const size_t cols);
-void cml_deleteMatrix(Matrix matrix);
+cml_Matrix cml_createMatrix(const size_t rows, const size_t cols);
+void cml_deleteMatrix(cml_Matrix matrix);
 
 #endif // CML_MATRIX_H

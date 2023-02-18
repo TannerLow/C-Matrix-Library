@@ -10,6 +10,7 @@ typedef struct {
     size_t count;
 } DeviceArray;
 
-DeviceArray getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices);
+DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices);
+void cml_deleteDeviceArray(DeviceArray* deviceArray);
 
 #endif // CML_GPU_H

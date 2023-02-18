@@ -10,9 +10,6 @@
 #endif
 
 #define cml_crash(code) _cml_crash(code, __FILE__, __LINE__)
-int _cml_crash(int errorCode, const char* file, unsigned int line) {
-    fprintf(cml_logStream, "[ERROR] Encountered error with code %d (%s, %d)\n", errorCode, file, line);
-    exit(errorCode);
-}
+int _cml_crash(int errorCode, const char* file, unsigned int line);
 
 #endif // CML_DEBUG_H

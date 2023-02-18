@@ -46,7 +46,7 @@ bool cml_test_runAllTests() {
 
 int cml_test_getGpus() {
     ANNOUNCE_TEST("cml_test_getGpus");
-    DeviceArray gpus = getGPUsWithCUDASupport(5, 5);
+    DeviceArray gpus = cml_getGPUsWithCUDASupport(5, 5);
 
     fprintf(cml_logStream, "Devices again:\n");
     for(int i = 0; i < (int)gpus.count; i++) {
