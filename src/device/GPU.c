@@ -7,8 +7,8 @@
 #include <string.h>
 #include <assert.h>
 
-DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices) {
-    DeviceArray gpus;
+cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices) {
+    cml_DeviceArray gpus;
     gpus.deviceIds = NULL;
     gpus.count = 0;
 
@@ -97,11 +97,131 @@ DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t
     return gpus;
 }
 
-void cml_deleteDeviceArray(DeviceArray* deviceArray) {
+void cml_deleteDeviceArray(cml_DeviceArray* deviceArray) {
     assert(deviceArray != NULL);
     assert(deviceArray->deviceIds != NULL);
 
     free(deviceArray->deviceIds);
     deviceArray->deviceIds = NULL;
     deviceArray->count = 0;
+}
+
+cml_GPU cml_createGPU(cl_device_id device) {
+    assert(device != NULL);
+
+    cml_GPU gpu;
+
+    gpu.kernelMap = cml_createDynamicArray(5, sizeof(cml_KernelMapEntry));
+    gpu.buffers = cml_createDynamicArray(10, sizeof(cml_GPUBuffer));
+
+    cl_int clCode;
+    gpu.gpu = device;
+    gpu.context = clCreateContext(NULL, 1, &gpu.gpu, NULL, NULL, &clCode);
+    assert(clCode == CL_SUCCESS);
+    gpu.commands = clCreateCommandQueue(gpu.context, gpu.gpu, 0, &clCode);
+    assert(clCode == CL_SUCCESS);
+    gpu.programLoaded = false;
+
+    return gpu;
+}
+
+void cml_deleteGPU(cml_GPU* gpu) {
+    assert(gpu != NULL);
+
+    cl_int clCode;
+
+    // clean the command queue
+    clCode = clFlush(gpu->commands);
+    assert(clCode == CL_SUCCESS);
+    clCode = clFinish(gpu->commands);
+    assert(clCode == CL_SUCCESS);
+
+    // clean up program and kernels
+    if(gpu->programLoaded) {
+        for(size_t i = 0; i < gpu->kernelMap.size; i++) {
+            cl_kernel kernel = ((cml_KernelMapEntry*)cml_dynamicArrayGet(&gpu->kernelMap, i))->kernel;
+            clCode = clReleaseKernel(kernel);
+            assert(clCode == CL_SUCCESS);
+        }
+        clCode = clReleaseProgram(gpu->program);
+        assert(clCode == CL_SUCCESS);
+        gpu->programLoaded = false;
+    }
+    
+    // clean up memory allocated on the device
+    for(size_t i = 0; i < gpu->buffers.size; i++) {
+        cml_GPUBuffer buffer = *(cml_GPUBuffer*)cml_dynamicArrayGet(&gpu->buffers, i);
+        clCode = clReleaseMemObject(buffer);
+        assert(clCode == CL_SUCCESS);
+    }
+    gpu->buffers.size = 0;
+
+    // finish the clean up
+    clCode = clReleaseCommandQueue(gpu->commands);
+    assert(clCode == CL_SUCCESS);
+    clCode = clReleaseContext(gpu->context);
+    assert(clCode == CL_SUCCESS);
+}
+
+void cml_loadGPUProgram(cml_GPU* gpu, const cml_Program program) {
+    assert(gpu != NULL);
+    
+    cl_int clCode;
+    cl_program clProgram = clCreateProgramWithSource(gpu->context, 1, (const char**) &program.code, (const size_t*) &program.size, &clCode);
+    assert(clCode == CL_SUCCESS);
+    
+    clCode = clBuildProgram(clProgram, 0, NULL, NULL, NULL, NULL);
+    if(clCode != CL_SUCCESS) {
+        size_t len;
+        char buffer[2048];
+        fprintf(cml_logStream, "[ERROR] Failed to build kernel executable!\n");
+        clGetProgramBuildInfo(clProgram, gpu->gpu, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+        fprintf(cml_logStream, "%s\n", buffer);
+        cml_crash(CML_CL_ERROR);
+    }
+
+    gpu->program = clProgram;
+    gpu->programLoaded = true;
+}
+
+void cml_createGPUKernel(cml_GPU* gpu, const cml_Kernel kernel) {
+    assert(gpu != NULL);
+
+    cl_int clCode;
+    cml_KernelMapEntry mapEntry;
+    mapEntry.kernalName = kernel.kernelName;
+    mapEntry.kernel = clCreateKernel(gpu->program, kernel.kernelName, &clCode);
+    assert(mapEntry.kernel && clCode == CL_SUCCESS);
+
+    cml_dynamicArrayPush(&gpu->kernelMap, (void*)&mapEntry);
+}
+
+cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size, void* hostPtr) {
+    assert(gpu != NULL);
+    assert(hostPtr != NULL);
+
+    cl_int clCode;
+    cml_GPUBuffer buffer;
+    buffer = clCreateBuffer(gpu->context, CL_MEM_READ_WRITE, size, NULL, &clCode);
+    assert(clCode == CL_SUCCESS);
+
+    size_t index = cml_dynamicArrayPush(&gpu->buffers, (void*)&buffer);
+    return (cml_GPUBuffer*)cml_dynamicArrayGet(&gpu->buffers, index);
+}
+
+cml_GPU cml_simpleSetupGPU() {
+    cml_DeviceArray deviceArray = cml_getGPUsWithCUDASupport(1, 1);
+    assert(deviceArray.count > 0);
+    cml_GPU gpu = cml_createGPU(deviceArray.deviceIds[0]);
+    free(deviceArray.deviceIds);
+
+    FILE* programSource = fopen("matrix_multiply.cl", "r");
+    cml_Program program = cml_createProgram(programSource);
+    fclose(programSource);
+    cml_loadGPUProgram(&gpu, program);
+
+    cml_Kernel kernel = cml_createKernel("matrixMultiply", &program);
+    cml_createGPUKernel(&gpu, kernel);
+
+    return gpu;
 }

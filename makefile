@@ -7,7 +7,7 @@ LD        := gcc
 AR        := ar
 override CFLAGS := $(sort -Wall -Wextra $(CFLAGS))
 
-MODULES        := . device matrix
+MODULES        := . device matrix util
 TEST_MODULES   := .
 SRC_DIR        := $(addprefix src/,$(MODULES))
 TEST_SRC_DIR   := $(addprefix test/,$(TEST_MODULES))

@@ -5,7 +5,7 @@
  
 // OpenCL Kernel
 __kernel void
-matrixMul(__global float* C, 
+matrixMultiply(__global float* C, 
           __global float* A, 
           __global float* B, 
           int wA, int wB)
@@ -26,5 +26,5 @@ matrixMul(__global float* C,
  
    // Write the matrix to device memory each 
    // thread writes one element
-   C[ty * wA + tx] = value;
+   C[ty * wB + tx] = value;
 }
