@@ -150,7 +150,7 @@ void cml_matrixMultiplyGPU(cml_GPU* gpu, const cml_Matrix* a, const cml_Matrix* 
     // write matrices to buffers
     const cml_Matrix* matrices[3] = {a, b, out};
     for(size_t i = gpu->buffers.size; i < 3; i++) {
-        cml_allocateGPUBuffer(gpu, matrices[i]->rows * matrices[i]->cols * sizeof(float), (void*)matrices[i]->data);
+        cml_allocateGPUBuffer(gpu, matrices[i]->rows * matrices[i]->cols * sizeof(float)); // , (void*)matrices[i]->data);
     }
  
     clCode  = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)cml_dynamicArrayGet(&gpu->buffers, 2)); assert(clCode == CL_SUCCESS);

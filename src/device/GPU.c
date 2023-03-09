@@ -161,6 +161,10 @@ void cml_deleteGPU(cml_GPU* gpu) {
     assert(clCode == CL_SUCCESS);
     clCode = clReleaseContext(gpu->context);
     assert(clCode == CL_SUCCESS);
+
+    if(clCode != CL_SUCCESS) {
+        cml_crash(clCode);
+    }
 }
 
 void cml_loadGPUProgram(cml_GPU* gpu, const cml_Program program) {
@@ -196,9 +200,9 @@ void cml_createGPUKernel(cml_GPU* gpu, const cml_Kernel kernel) {
     cml_dynamicArrayPush(&gpu->kernelMap, (void*)&mapEntry);
 }
 
-cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size, void* hostPtr) {
+cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size) {
     assert(gpu != NULL);
-    assert(hostPtr != NULL);
+    // assert(hostPtr != NULL);
 
     cl_int clCode;
     cml_GPUBuffer buffer;

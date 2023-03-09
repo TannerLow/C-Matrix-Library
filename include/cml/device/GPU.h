@@ -38,7 +38,7 @@ cml_GPU cml_createGPU(cl_device_id device);
 void cml_deleteGPU(cml_GPU* gpu);
 void cml_loadGPUProgram(cml_GPU* gpu, const cml_Program program);
 void cml_createGPUKernel(cml_GPU* gpu, const cml_Kernel kernel);
-cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size, void* hostPtr);
+cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size);
 // void cml_freeGPUBuffer(cml_GPU* gpu, cml_GPUBuffer* buffer);
 
 cml_GPU cml_simpleSetupGPU();
