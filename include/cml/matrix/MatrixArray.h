@@ -10,4 +10,6 @@ typedef struct {
 
 cml_MatrixArray cml_createMatrixArray(const size_t count);
 
+// TODO add delete function
+
 #endif // CML_MATRIX_ARRAY_H

@@ -23,6 +23,7 @@ void cml_deleteDynamicArray(cml_DynamicArray* array) {
     assert(array != NULL);
 
     free(array->data);
+    array->data = NULL;
     array->capacity = 0;
     array->size = 0;
     array->itemSize = 0;

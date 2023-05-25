@@ -8,23 +8,23 @@ __kernel void
 matrixMultiply(__global float* C, 
           __global float* A, 
           __global float* B, 
-          int wA, int wB)
+          int sharedDimension, int bCols)
 {
   
-   int tx = get_global_id(0); 
-   int ty = get_global_id(1);
+   int globalRow = get_global_id(0); 
+   int globalCol = get_global_id(1);
  
    // value stores the element that is 
    // computed by the thread
    float value = 0;
-   for (int k = 0; k < wA; ++k)
+   for (int k = 0; k < sharedDimension; ++k)
    {
-      float elementA = A[ty * wA + k];
-      float elementB = B[k * wB + tx];
+      float elementA = A[globalRow * sharedDimension + k];
+      float elementB = B[k * bCols + globalCol];
       value += elementA * elementB;
    }
  
    // Write the matrix to device memory each 
    // thread writes one element
-   C[ty * wB + tx] = value;
+   C[globalRow * bCols + globalCol] = value;
 }

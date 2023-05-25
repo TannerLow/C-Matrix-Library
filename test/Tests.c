@@ -1,4 +1,5 @@
 #include "Tests.h"
+#include "TestUtils.h"
 
 #include <cml/Logger.h>
 #include <cml/device/GPU.h>
@@ -14,18 +15,7 @@
 #include <CL/cl.h>
 #endif
 
-// #define _CL_ERROR 1
-// #define NO_PLATFORMS_FOUND 2
-// #define NO_DEVICES_FOUND 3
-
-#define ANNOUNCE_TEST(testName) fprintf(cml_logStream, "[TEST] Beginning test: %s\n", testName);
 #define TESTCASE(test) (test == TEST_SUCCESS)
-
-// #define crash(code) _crash(code, __FILE__, __LINE__)
-// int _crash(int errorCode, const char* file, unsigned int line) {
-//     fprintf(cml_logStream, "Encountered error with code %d (%s, %d)\n", errorCode, file, line);
-//     exit(errorCode);
-// }
 
 bool cml_test_runAllTests() {
     ANNOUNCE_TEST("cml_test_runAllTests");
@@ -36,13 +26,6 @@ bool cml_test_runAllTests() {
 
     return cml_test_getGpusSuccess;
 }
-
-// typedef struct {
-//     cl_device_id* deviceIds;
-//     size_t count;
-// } DeviceArray;
-
-// static DeviceArray getGPUsWithCUDASupport();
 
 int cml_test_getGpus() {
     ANNOUNCE_TEST("cml_test_getGpus");

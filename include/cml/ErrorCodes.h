@@ -1,3 +1,7 @@
-#define CML_CL_ERROR           11001
 #define CML_NO_PLATFORMS_FOUND 11002
 #define CML_NO_DEVICES_FOUND   11003
+
+#define CML_CL_ERROR           11100
+#define CML_CL_PROGRAM_0       11101
+
+#define CML_NULL_POINTER_PARAMETER 11200

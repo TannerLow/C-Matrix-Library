@@ -27,6 +27,8 @@ void printMatrix(const cml_Matrix* matrix);
 int unabstractedMatMul();
 int abstractedMatMul();
 int simpleAbstractedMatMul();
+int simpleAbstractedMatAddRow();
+int simpleAbstractedMatRelu();
 
 int driver() {
     return simpleAbstractedMatMul();
@@ -169,7 +171,7 @@ int unabstractedMatMul() {
     /////////////////////////////////////////////////////////
 
     fprintf(cml_logStream, "Start CPU multiplication\n");
-    cml_matrixMultiply(&matrixA, &matrixB, &matrixC);
+    cml_matrixMultiply(matrixA, matrixB, &matrixC);
     fprintf(cml_logStream, "done\n");
     for(size_t i = 0; i < (size_t)sizeA; i++) {
         // fprintf(cml_logStream, "%.10f %.10f\n", matrixC.data[i], hostC[i]);
@@ -240,9 +242,9 @@ int abstractedMatMul() {
 
     FILE* programSource = fopen("matrix_multiply.cl", "r");
     cml_Program program = cml_createProgram(programSource);
-    cml_loadGPUProgram(&gpu, program);
+    cl_program programId = cml_loadGPUProgram(&gpu, program);
 
-    cml_Kernel kernel = cml_createKernel("matrixMultiply", &program);
+    cml_Kernel kernel = cml_createKernel("matrixMultiply", programId);
     cml_createGPUKernel(&gpu, kernel);
 
     cml_Matrix a   = cml_createMatrix(2, 3);
@@ -296,7 +298,7 @@ int simpleAbstractedMatMul() {
     cml_Matrix out = cml_createMatrix(2, 2);
 
     float aData[] = {2,3,4,5,6,7};
-    float bData[] = {1,0,1,0,1,0};
+    float bData[] = {1,1,1,2,1,3};
     memcpy(a.data, aData, 6 * sizeof(float));
     memcpy(b.data, bData, 6 * sizeof(float));
     printMatrix(&a);
@@ -322,6 +324,22 @@ int simpleAbstractedMatMul() {
 
     printMatrix(&out2);
 
+    // Do it again
+    cml_Matrix e   = cml_createMatrix(1, 3);
+    cml_Matrix f   = cml_createMatrix(3, 2);
+    cml_Matrix out3 = cml_createMatrix(1, 2);
+
+    float eData[] = {0.5f,0.2f,0.3f};
+    float fData[] = {1,2,3,4,5,6};
+    memcpy(e.data, eData, 3 * sizeof(float));
+    memcpy(f.data, fData, 6 * sizeof(float));
+    printMatrix(&e);
+    printMatrix(&f);
+
+    cml_matrixMultiplyGPU(&gpu, &e, &f, &out3);
+
+    printMatrix(&out3);
+
     cml_deleteGPU(&gpu);
     cml_deleteMatrix(a);
     cml_deleteMatrix(b);
@@ -329,6 +347,77 @@ int simpleAbstractedMatMul() {
     cml_deleteMatrix(c);
     cml_deleteMatrix(d);
     cml_deleteMatrix(out2);
+    cml_deleteMatrix(e);
+    cml_deleteMatrix(f);
+    cml_deleteMatrix(out3);
+
+    printf("That's crazy simple!\n");
+    return 0;
+}
+
+int simpleAbstractedMatAddRow() {
+    cml_GPU gpu = cml_simpleSetupGPU();
+
+    cml_Matrix matrix1 = cml_createMatrix(3, 2);
+    cml_Matrix row1    = cml_createMatrix(1, 2);
+    cml_Matrix out1    = cml_createMatrix(3, 2);
+
+    float matrix1Data[] = {1,2,3,4,5,6};
+    float row1Data[] = {1,2};
+    memcpy(matrix1.data, matrix1Data, 6 * sizeof(float));
+    memcpy(row1.data, row1Data, 2 * sizeof(float));
+    printMatrix(&matrix1);
+    printMatrix(&row1);
+
+    cml_matrixAddRowGPU(&gpu, matrix1, row1, &out1);
+
+    printMatrix(&out1);
+
+    // Do it again
+    cml_Matrix matrix2 = cml_createMatrix(2, 3);
+    cml_Matrix row2    = cml_createMatrix(1, 3);
+    cml_Matrix out2    = cml_createMatrix(2, 3);
+
+    float matrix2Data[] = {0,1,1,1,1,0};
+    float row2Data[] = {1,2,1};
+    memcpy(matrix2.data, matrix2Data, 6 * sizeof(float));
+    memcpy(row2.data, row2Data, 3 * sizeof(float));
+    printMatrix(&matrix2);
+    printMatrix(&row2);
+
+    cml_matrixAddRowGPU(&gpu, matrix2, row2, &out2);
+
+    printMatrix(&out2);
+
+    cml_deleteGPU(&gpu);
+    cml_deleteMatrix(matrix1);
+    cml_deleteMatrix(row1);
+    cml_deleteMatrix(out1);
+    cml_deleteMatrix(matrix2);
+    cml_deleteMatrix(row2);
+    cml_deleteMatrix(out2);
+
+    printf("That's crazy simple!\n");
+    return 0;
+}
+
+int simpleAbstractedMatRelu() {
+    cml_GPU gpu = cml_simpleSetupGPU();
+
+    cml_Matrix matrix = cml_createMatrix(1, 3);
+    cml_Matrix out    = cml_createMatrix(1, 3);
+
+    float matrixData[] = {1,0,-1};
+    memcpy(matrix.data, matrixData, 3 * sizeof(float));
+    printMatrix(&matrix);
+
+    cml_matrixReluGPU(&gpu, matrix, &out);
+
+    printMatrix(&out);
+
+    cml_deleteGPU(&gpu);
+    cml_deleteMatrix(matrix);
+    cml_deleteMatrix(out);
 
     printf("That's crazy simple!\n");
     return 0;
