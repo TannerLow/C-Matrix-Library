@@ -3,3 +3,6 @@ backup
 build
 .vscode
 makefile_
+makefile__
+old
+log.txt

@@ -23,7 +23,10 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <stdio.h>
+#include <stdio.h> 
+
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
 
 void cml_matrixMultiplyGPU(cml_GPU* gpu, const cml_Matrix* a, const cml_Matrix* b, cml_Matrix* out) {
     assert(gpu != NULL);

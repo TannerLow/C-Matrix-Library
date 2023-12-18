@@ -1,12 +1,16 @@
 #include <cml/util/Program.h>
-#include <cml/Logger.h>
 #include <cml/ErrorCodes.h>
+#include <cdh/Debug.h>
+#include <cdh/Asserts.h>
 
 #include <assert.h>
 #include <stdlib.h>
 
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
+
 cml_Program cml_createProgram(FILE* file) {
-    assertOrExecute(file != NULL, cml_crash(CML_NULL_POINTER_PARAMETER));
+    assertOrExecute(file != NULL, cdh_crash(CML_NULL_POINTER_PARAMETER));
  
     cml_Program program;
 

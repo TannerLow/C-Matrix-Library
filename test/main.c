@@ -1,16 +1,19 @@
-#include <cml/Logger.h>
+#include <cdh/Logger.h>
 #include "Tests.h"
 #include "Testing.h"
 #include "CPUMatrixMathTests.h"
-
+#include <stdio.h>
 
 int main() {
-    cml_logStream = stdout;
+    FILE* logFile = fopen("log.txt", "w");
+    cdh_logStream = logFile;
     //cml_test_runAllTests();
     driver();
-    cml_log("cml_test_cpuMatrixAddition: %s\n", cml_test_cpuMatrixAddition() ? "SUCCESS" : "FAILURE");
-    cml_log("cml_test_cpuMatrixMultiply: %s\n", cml_test_cpuMatrixMultiply() ? "SUCCESS" : "FAILURE");
-    cml_log("cml_test_cpuMatrixLinear: %s\n", cml_test_cpuMatrixLinear() ? "SUCCESS" : "FAILURE");
-    cml_log("cml_test_cpuMatrixRelu: %s\n", cml_test_cpuMatrixRelu() ? "SUCCESS" : "FAILURE");
+    cdh_log("cml_test_cpuMatrixAddition: %s\n", cml_test_cpuMatrixAddition() ? "SUCCESS" : "FAILURE");
+    cdh_log("cml_test_cpuMatrixMultiply: %s\n", cml_test_cpuMatrixMultiply() ? "SUCCESS" : "FAILURE");
+    cdh_log("cml_test_cpuMatrixLinear: %s\n", cml_test_cpuMatrixLinear() ? "SUCCESS" : "FAILURE");
+    cdh_log("cml_test_cpuMatrixRelu: %s\n", cml_test_cpuMatrixRelu() ? "SUCCESS" : "FAILURE");
+    
+    fclose(logFile);
     return 0;
 }

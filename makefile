@@ -1,109 +1,136 @@
 # GNU Make docs : https://www.gnu.org/software/make/manual/make.html
 # Quick tutorial: https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
 
-PYTHON    := python
 CC        := gcc
 LD        := gcc
 AR        := ar
 override CFLAGS := $(sort -Wall -Wextra $(CFLAGS))
 
-MODULES        := . device matrix util
-TEST_MODULES   := .
-SRC_DIR        := $(addprefix src/,$(MODULES))
-TEST_SRC_DIR   := $(addprefix test/,$(TEST_MODULES))
-BUILD_DIR      := $(addprefix build/,$(SRC_DIR))
-TEST_BUILD_DIR := $(addprefix build/,$(TEST_SRC_DIR))
+MODULES := . device matrix util 
+SRC_DIR := $(addprefix src/,$(MODULES))
+SRC := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
+OBJ = $(patsubst %.c,build/release/%.o,$(SRC))
+OBJ_D = $(patsubst %.c,build/debug/%.o,$(SRC))
+BUILD_DIR = $(addprefix build/release/src/,$(MODULES))
+BUILD_DIR_D = $(addprefix build/debug/src/,$(MODULES))
+TEST_SRC := $(wildcard test/*.c)
 
-SRC           := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
-TEST_SRC      := $(foreach sdir,$(TEST_SRC_DIR),$(wildcard $(sdir)/*.c))
-SRC_OBJ       := $(patsubst src/%.c,build/src/%.o,$(SRC))
-TEST_OBJ      := $(patsubst test/%.c,build/test/%.o,$(TEST_SRC))
-INCLUDES      := -I "./OpenCL/Nvidia" -I "./include"
-TEST_INCLUDES := -I "./test"
+INCLUDES := -I "./include" -I "./include/OpenCL/Nvidia"
+LIBDIR   := "./lib/release/x86_64"
+LIBDIR_D := "./lib/debug/x86_64"
+# LIBS should be most ambiguous to least ambiguous
+LIBS   := -l "CDebugHelper" -l "OpenCL_nvidia"
+LIBS_D := -l "CDebugHelper-d" -l "OpenCL_nvidia"
 
-LIBDIR := -L "./OpenCL"
-LIBS := -l "x86_64/OpenCL_nvidia"
+LIBRARY   := lib/release/x86_64/CMatrixLib.lib
+LIBRARY_D := lib/debug/x86_64/CMatrixLib-d.lib
+EXECUTABLE   := 
+EXECUTABLE_D := 
+ifeq ($(OS), Windows_NT)
+	EXECUTABLE   := build/release/main.exe
+	EXECUTABLE_D := build/debug/main.exe
+else
+	EXECUTABLE   := build/release/main.out
+	EXECUTABLE_D := build/debug/main.out
+endif
 
 
-# Platform specific variables
+#####[ Platform specific variables ]#####
 DELETE      := 
 RMDIR       := 
-EXE         := 
+#EXE         := 
 HIDE_OUTPUT := 
 PS          := 
 ifeq ($(OS), Windows_NT)
 	DELETE      := del /f
 	RMDIR       := rmdir /s /q
-	EXE         := main.exe
+#	EXE         :=main.exe
 	HIDE_OUTPUT := 2> nul
 	PS          :=\\
 
 else
 	DELETE      := rm -f
 	RMDIR       := rm -rf
-	EXE         := main.out
+#	EXE         :=main.out
 	HIDE_OUTPUT := > /dev/null
 	PS          :=/
 endif
 
-
-.PHONY: release checkdirs clean
-
-SHARED_DEPS = checkdirs lib/CMatrixLib.lib build/main.exe
-
-all: checkdirs lib/CMatrixLib.lib build/main.exe
-	$(PYTHON) ./line_counter.py
-
-release:
-	$(MAKE) all CFLAGS="-DNDEBUG $(CFLAGS)"
-
-debug:
-	$(MAKE) all CFLAGS="-DDEBUG $(CFLAGS)"
-
-build/main.exe: $(TEST_OBJ)
-	$(CC) $(CFLAGS) $^ -o $@ $(TEST_INCLUDES) $(INCLUDES) $(LIBDIR) -L "./lib" -l "CMatrixLib" $(LIBS)
-
-lib/CMatrixLib.lib: $(SRC_OBJ)
-	$(AR) rcs $@ $(foreach obj,$^, -o $(obj)) 
-
-checkdirs: $(BUILD_DIR) $(TEST_BUILD_DIR)
+#####[ recipes ]#####
 
 $(BUILD_DIR):
 ifeq ($(OS), Windows_NT)
 	@IF not exist "$@" (mkdir "$@")
-	@IF not exist lib (mkdir lib)
 else
 	@mkdir -p $@
-	@mkdir -p lib
 endif
 
-$(TEST_BUILD_DIR):
+$(BUILD_DIR_D):
 ifeq ($(OS), Windows_NT)
 	@IF not exist "$@" (mkdir "$@")
-	@IF not exist lib (mkdir lib)
 else
 	@mkdir -p $@
-	@mkdir -p lib
 endif
 
+$(LIBDIR):
+ifeq ($(OS), Windows_NT)
+	@IF not exist $@ (mkdir $@)
+else
+	@mkdir -p $@
+endif
+
+$(LIBDIR_D):
+ifeq ($(OS), Windows_NT)
+	@IF not exist $@ (mkdir $@)
+else
+	@mkdir -p $@
+endif
+
+# filtering and target patterns
+# https://www.gnu.org/software/make/manual/make.html#Static-Usage
+$(filter build/release/%.o,$(OBJ)): build/release/%.o: %.c
+	@echo Building $<
+	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES) -L $(LIBDIR) $(LIBS)
+
+$(filter build/debug/%.o,$(OBJ_D)): build/debug/%.o: %.c
+	@echo Building $<
+	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES) -L $(LIBDIR_D) $(LIBS_D)
+
+
+.PHONY: release debug release_executable debug_executable print clean
+release:
+	$(MAKE) release_executable CFLAGS="-DNDEBUG $(CFLAGS)"
+
+debug:
+	$(MAKE) debug_executable CFLAGS="-DDEBUG $(CFLAGS)"
+
+release_executable: release_library
+	$(LD) $(CFLAGS) $(TEST_SRC) -o $(EXECUTABLE) $(INCLUDES) -L . -l $(basename $(LIBRARY)) -L $(LIBDIR) $(LIBS)
+
+release_library: $(LIBDIR) $(BUILD_DIR) $(OBJ)
+	$(AR) rcs $(LIBRARY) $(foreach obj,$(OBJ), -o $(obj)) 
+
+debug_executable: debug_library
+	$(LD) $(CFLAGS) $(TEST_SRC) -o $(EXECUTABLE_D) $(INCLUDES) -L . -l $(basename $(LIBRARY_D)) -L $(LIBDIR_D) $(LIBS_D)
+
+debug_library: $(LIBDIR_D) $(BUILD_DIR_D) $(OBJ_D)
+	$(AR) rcs $(LIBRARY_D) $(foreach obj,$(OBJ_D), -o $(obj)) 
+
+print:
+	@echo $(SRC_DIR)
+	@echo $(SRC)
+	@echo $(OBJ)
+	@echo $(OBJ_D)
+	@echo $(BUILD_DIR)
+
 clean:
-	$(RMDIR) build
-	$(RMDIR) lib
-
-vpath %.c $(TEST_SRC_DIR)
-
-define make-test-obj
-$1/%.o: %.c
-	$(CC) $(CFLAGS) -c $$< -o $$@ $(TEST_INCLUDES) $(INCLUDES) $(LIBDIR) -L "./lib" -l "CMatrixLib" $(LIBS)
-endef
-
-vpath %.c $(SRC_DIR)
-
-define make-obj
-$1/%.o: %.c
-	$(CC) $(CFLAGS) -c $$< -o $$@ $(INCLUDES) $(LIBDIR) $(LIBS)
-endef
-
-$(foreach bdir,$(BUILD_DIR),$(eval $(call make-obj,$(bdir))))
-
-$(foreach bdir,$(TEST_BUILD_DIR),$(eval $(call make-test-obj,$(bdir))))
+ifeq ($(OS), Windows_NT)
+	IF exist build ($(RMDIR) build)
+	IF exist "$(LIBRARY)" ($(DELETE) "$(subst /,\,$(LIBRARY))")
+	IF exist "$(LIBRARY_D)" ($(DELETE) "$(subst /,\,$(LIBRARY_D))")
+else
+	@$(RMDIR) build
+	@$(DELETE) $(LIBRARY)
+	@$(DELETE) $(LIBRARY_D)
+endif
+	mkdir build

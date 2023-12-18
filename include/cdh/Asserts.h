@@ -1,5 +1,5 @@
-#ifndef _ASSERTS
-#define _ASSERTS
+#ifndef CDH_ASSERTS_H
+#define CDH_ASSERTS_H
 
 /*
 Fancy macros for asserts that have behavior in non-debug
@@ -29,4 +29,4 @@ the condition fails.
 
 #endif // DEBUG
 
-#endif // _ASSERTS
+#endif // CDH_ASSERTS_H

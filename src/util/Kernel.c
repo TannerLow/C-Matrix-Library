@@ -1,13 +1,16 @@
 #include <cml/util/Kernel.h>
-#include <cml/Logger.h>
-#include "util/Asserts.h"
+#include <cdh/Debug.h>
+#include "cdh/Asserts.h"
 #include <cml/ErrorCodes.h>
 
 #include <stdlib.h>
 
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
+
 cml_Kernel cml_createKernel(const char* kernelName, cl_program program) {
-    assertOrExecute(kernelName != NULL, cml_crash(CML_NULL_POINTER_PARAMETER));
-    assertOrExecute(program != 0, cml_crash(CML_CL_PROGRAM_0));
+    assertOrExecute(kernelName != NULL, cdh_crash(CML_NULL_POINTER_PARAMETER));
+    assertOrExecute(program != 0, cdh_crash(CML_CL_PROGRAM_0));
 
     cml_Kernel kernel;
     kernel.kernelName = kernelName;

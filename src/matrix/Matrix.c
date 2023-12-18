@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
+
 cml_Matrix cml_createMatrix(const size_t rows, const size_t cols) {
     cml_Matrix matrix;
     matrix.data = (float*)malloc(sizeof(float) * rows * cols);

@@ -2,9 +2,9 @@
 
 #include "Testing.h"
 
-#include <cml/Logger.h>
+#include <cdh/Logger.h>
 #include <cml/device/GPU.h>
-#include <cml/Debug.h>
+#include <cdh/Debug.h>
 #include <cml/ErrorCodes.h>
 #include <cml/matrix/Matrix.h>
 #include <cml/matrix/MatrixMath.h>
@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
 
 #define MAX_KERNEL_SOURCE_SIZE 0x10000
 
@@ -124,13 +127,13 @@ int unabstractedMatMul() {
     if(clCode != CL_SUCCESS) {
         size_t len;
         char buffer[2048];
-        fprintf(cml_logStream, "[ERROR] Failed to build kernel executable!\n");
+        cdh_log("[ERROR] Failed to build kernel executable!\n");
         clGetProgramBuildInfo(program, gpu, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
-        fprintf(cml_logStream, "%s\n", buffer);
-        cml_crash(CML_CL_ERROR);
+        cdh_log("%s\n", buffer);
+        cdh_crash(CML_CL_ERROR);
     }
 
-    fprintf(cml_logStream, "Running matrix multiplication for matrices A (%dx%d) and B (%dx%d) ...\n", widthA, heightA, widthB, heightB);
+    cdh_log("Running matrix multiplication for matrices A (%dx%d) and B (%dx%d) ...\n", widthA, heightA, widthB, heightB);
 
     cl_kernel kernel = clCreateKernel(program, "matrixMultiply", &clCode);
     assert(kernel && clCode == CL_SUCCESS);
@@ -166,21 +169,21 @@ int unabstractedMatMul() {
     clCode = clEnqueueReadBuffer(commands, dC, CL_TRUE, 0, memSizeC, hostC, 0, NULL, NULL);
     assert(clCode == CL_SUCCESS);
 
-    fprintf(cml_logStream, "Done running matrix multiplication\n");
+    cdh_log("Done running matrix multiplication\n");
 
     /////////////////////////////////////////////////////////
 
-    fprintf(cml_logStream, "Start CPU multiplication\n");
+    cdh_log("Start CPU multiplication\n");
     cml_matrixMultiply(matrixA, matrixB, &matrixC);
-    fprintf(cml_logStream, "done\n");
+    cdh_log("done\n");
     for(size_t i = 0; i < (size_t)sizeA; i++) {
-        // fprintf(cml_logStream, "%.10f %.10f\n", matrixC.data[i], hostC[i]);
+        // cdh_log("%.10f %.10f\n", matrixC.data[i], hostC[i]);
         assert(withinRange(matrixC.data[i], hostC[i], 0.001f));
     }
 
     /////////////////////////////////////////////////////////
 
-    fprintf(cml_logStream, "Running another matrix multiplication\n");
+    cdh_log("Running another matrix multiplication\n");
 
     // Host memory (non-GPU stuff)
     const unsigned int sizeD = widthA * heightA;
@@ -203,7 +206,7 @@ int unabstractedMatMul() {
     clCode = clEnqueueReadBuffer(commands, dC, CL_TRUE, 0, memSizeC, hostC, 0, NULL, NULL);
     assert(clCode == CL_SUCCESS);
 
-    fprintf(cml_logStream, "done\n");
+    cdh_log("done\n");
 
     // Clean up
     clCode = clFlush(commands);
@@ -427,9 +430,9 @@ void printMatrix(const cml_Matrix* matrix) {
     assert(matrix);
     for(size_t row = 0; row < matrix->rows; row++) {
         for(size_t col = 0; col < matrix->cols; col++) {
-            fprintf(cml_logStream, "%0.4f ", matrix->data[row * matrix->cols + col]);
+            cdh_log("%0.4f ", matrix->data[row * matrix->cols + col]);
         }
-        fprintf(cml_logStream, "\n");
+        cdh_log("\n");
     }
-    fprintf(cml_logStream, "\n");
+    cdh_log("\n");
 }

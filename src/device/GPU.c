@@ -1,11 +1,14 @@
 #include <cml/device/GPU.h>
-#include <cml/Logger.h>
+#include <cdh/Logger.h>
 #include <cml/ErrorCodes.h>
-#include <cml/Debug.h>
+#include <cdh/Debug.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
 
 cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uint8_t maxDevices) {
     cml_DeviceArray gpus;
@@ -19,20 +22,20 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
     cl_platform_id* platformIds = (cl_platform_id*)malloc(sizeof(cl_platform_id) * maxPlatforms);
     printf("successfully malloc'd space for platformIds\n");
     cl_uint numberOfPlatforms;
-    cml_DEBUG(fprintf(cml_logStream, "fetching GPU platform IDs\n"));
+    cdh_DEBUG(cdh_log("fetching GPU platform IDs\n"));
     cl_int clCode = clGetPlatformIDs(maxPlatforms, platformIds, &numberOfPlatforms);
 
     if(clCode != CL_SUCCESS) {
-        cml_crash(CML_CL_ERROR);
+        cdh_crash(CML_CL_ERROR);
     }
 
     if(numberOfPlatforms == 0) {
-        cml_crash(CML_NO_PLATFORMS_FOUND);
+        cdh_crash(CML_NO_PLATFORMS_FOUND);
     }
 
-    cml_DEBUG(fprintf(cml_logStream, "clCode from clGetPlatformIDs: %d\n", clCode));
-    cml_DEBUG(fprintf(cml_logStream, "# of platforms found: %d\n", (int)numberOfPlatforms));
-    cml_DEBUG(fprintf(cml_logStream, "Platforms:\n"));
+    cdh_DEBUG(cdh_log("clCode from clGetPlatformIDs: %d\n", clCode));
+    cdh_DEBUG(cdh_log("# of platforms found: %d\n", (int)numberOfPlatforms));
+    cdh_DEBUG(cdh_log("Platforms:\n"));
 
     int cudaPlatformIndex = -1;
     for(int i = 0; i < (int)numberOfPlatforms; i++) {
@@ -41,20 +44,20 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
         clCode = clGetPlatformInfo(platformIds[i], CL_PLATFORM_NAME, 128, platformName, NULL);
         
         if(clCode != CL_SUCCESS) {
-            cml_DEBUG(fprintf(cml_logStream, "clGetPlatformInfo failed with code %d\n", clCode));
+            cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
             free(platformIds);
-            cml_crash(CML_CL_ERROR);
+            cdh_crash(CML_CL_ERROR);
         }
-        cml_DEBUG(fprintf(cml_logStream, "%s\n", platformName));
+        cdh_DEBUG(cdh_log("%s\n", platformName));
 
         if(strcmp(platformName, "NVIDIA CUDA") == 0) {
             cudaPlatformIndex = i;
         }
     }
-    cml_DEBUG(fprintf(cml_logStream, "\n"));
+    cdh_DEBUG(cdh_log("\n"));
 
     if(cudaPlatformIndex < 0) {
-        cml_DEBUG(fprintf(cml_logStream, "No platforms with name NVIDIA CUDA were found\n"));
+        cdh_DEBUG(cdh_log("No platforms with name NVIDIA CUDA were found\n"));
         return gpus; // CUDA not found, return empty DeviceArray
     }
 
@@ -64,16 +67,16 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
     clCode = clGetDeviceIDs(platformIds[cudaPlatformIndex], CL_DEVICE_TYPE_GPU, maxDevices, deviceIds, &numberOfDevices);
     free(platformIds);
 
-    cml_DEBUG(fprintf(cml_logStream, "clCode from clGetDeviceIDs: %d\n", clCode));
-    cml_DEBUG(fprintf(cml_logStream, "# of devices found: %d\n", (int)numberOfDevices));
-    cml_DEBUG(fprintf(cml_logStream, "Devices:\n"));
+    cdh_DEBUG(cdh_log("clCode from clGetDeviceIDs: %d\n", clCode));
+    cdh_DEBUG(cdh_log("# of devices found: %d\n", (int)numberOfDevices));
+    cdh_DEBUG(cdh_log("Devices:\n"));
 
     if(clCode != CL_SUCCESS) {
-        cml_crash(CML_CL_ERROR);
+        cdh_crash(CML_CL_ERROR);
     }
 
     if(numberOfDevices == 0) {
-        cml_crash(CML_NO_DEVICES_FOUND);
+        cdh_crash(CML_NO_DEVICES_FOUND);
     }
 
     gpus.deviceIds = (cl_device_id*)malloc(sizeof(cl_device_id) * numberOfDevices);
@@ -84,16 +87,16 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
         clCode = clGetDeviceInfo(deviceIds[i], CL_DEVICE_NAME, 128, deviceName, NULL);
 
         if(clCode != CL_SUCCESS) {
-            cml_DEBUG(fprintf(cml_logStream, "clGetPlatformInfo failed with code %d\n", clCode));
+            cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
             free(deviceIds);
             free(gpus.deviceIds);
-            cml_crash(CML_CL_ERROR);
+            cdh_crash(CML_CL_ERROR);
         }
-        cml_DEBUG(fprintf(cml_logStream, "%s\n", deviceName));
+        cdh_DEBUG(cdh_log("%s\n", deviceName));
 
         memcpy(gpus.deviceIds + i, deviceIds + i, sizeof(cl_device_id));
     }
-    cml_DEBUG(fprintf(cml_logStream, "\n"));
+    cdh_DEBUG(cdh_log("\n"));
     
     free(deviceIds);
 
@@ -173,7 +176,7 @@ void cml_deleteGPU(cml_GPU* gpu) {
     assert(clCode == CL_SUCCESS);
 
     if(clCode != CL_SUCCESS) {
-        cml_crash(clCode);
+        cdh_crash(clCode);
     }
 }
 
@@ -188,10 +191,10 @@ cl_program cml_loadGPUProgram(cml_GPU* gpu, const cml_Program program) {
     if(clCode != CL_SUCCESS) {
         size_t len;
         char buffer[2048];
-        fprintf(cml_logStream, "[ERROR] Failed to build kernel executable!\n");
+        cdh_log("[ERROR] Failed to build kernel executable!\n");
         clGetProgramBuildInfo(clProgram, gpu->gpu, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
-        fprintf(cml_logStream, "%s\n", buffer);
-        cml_crash(CML_CL_ERROR);
+        cdh_log("%s\n", buffer);
+        cdh_crash(CML_CL_ERROR);
     }
 
     cml_dynamicArrayPush(&gpu->programMap, (void*)&clProgram);

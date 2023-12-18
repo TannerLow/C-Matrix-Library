@@ -4,6 +4,9 @@
 #include <assert.h>
 #include <string.h>
 
+// Should come last to override malloc family in debug mode
+#include <cdh/Memory.h>
+
 size_t cml_dynamicArrayGrowAmount = 10;
 
 cml_DynamicArray cml_createDynamicArray(size_t initialCapacity, size_t itemSize) {
