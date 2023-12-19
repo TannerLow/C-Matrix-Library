@@ -42,13 +42,16 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
         char platformName[128];
         memset(platformName, 0, 128);
         clCode = clGetPlatformInfo(platformIds[i], CL_PLATFORM_NAME, 128, platformName, NULL);
-        
+
+        char platform_version[256];
+        clGetPlatformInfo(platformIds[i], CL_PLATFORM_VERSION, sizeof(platform_version), platform_version, NULL);
+
         if(clCode != CL_SUCCESS) {
             cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
             free(platformIds);
             cdh_crash(CML_CL_ERROR);
         }
-        cdh_DEBUG(cdh_log("%s\n", platformName));
+        cdh_DEBUG(cdh_log("%s (OpenCL Version: %s)\n", platformName, platform_version));
 
         if(strcmp(platformName, "NVIDIA CUDA") == 0) {
             cudaPlatformIndex = i;
