@@ -39,12 +39,29 @@ cml_DeviceArray cml_getGPUsWithCUDASupport(const uint8_t maxPlatforms, const uin
 
     int cudaPlatformIndex = -1;
     for(int i = 0; i < (int)numberOfPlatforms; i++) {
+        char platformVendor[128];
+        memset(platformVendor, 0, 128);
+        clCode = clGetPlatformInfo(platformIds[i], CL_PLATFORM_VENDOR, sizeof(platformVendor), platformVendor, NULL);
+        printf("Vendor: %s\n", platformVendor);
+
+        if(clCode != CL_SUCCESS) {
+            cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
+            free(platformIds);
+            cdh_crash(CML_CL_ERROR);
+        }
+
         char platformName[128];
         memset(platformName, 0, 128);
         clCode = clGetPlatformInfo(platformIds[i], CL_PLATFORM_NAME, 128, platformName, NULL);
 
+        if(clCode != CL_SUCCESS) {
+            cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
+            free(platformIds);
+            cdh_crash(CML_CL_ERROR);
+        }
+
         char platform_version[256];
-        clGetPlatformInfo(platformIds[i], CL_PLATFORM_VERSION, sizeof(platform_version), platform_version, NULL);
+        clCode = clGetPlatformInfo(platformIds[i], CL_PLATFORM_VERSION, sizeof(platform_version), platform_version, NULL);
 
         if(clCode != CL_SUCCESS) {
             cdh_DEBUG(cdh_log("clGetPlatformInfo failed with code %d\n", clCode));
@@ -232,7 +249,7 @@ cml_GPUBuffer* cml_allocateGPUBuffer(cml_GPU* gpu, size_t size) {
 cml_GPU cml_simpleSetupGPU() {
     printf("cml_simpleSetupGPU: fetching GPU\n");
 
-    cml_DeviceArray deviceArray = cml_getGPUsWithCUDASupport(1, 1);
+    cml_DeviceArray deviceArray = cml_getGPUsWithCUDASupport(5, 5);
     assert(deviceArray.count > 0);
     cml_GPU gpu = cml_createGPU(deviceArray.deviceIds[0]);
     free(deviceArray.deviceIds);
